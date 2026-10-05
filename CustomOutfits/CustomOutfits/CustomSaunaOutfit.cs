@@ -18,6 +18,7 @@ using Sims3.SimIFace.CAS;
 using Sims3.Store.Objects;
 using Sims3.UI;
 using Tuning = Sims3.Gameplay.Destrospean.CustomOutfits;
+using Sims3.Gameplay.ThoughtBalloons;
 
 namespace Destrospean
 {
@@ -202,7 +203,7 @@ namespace Destrospean
                 StandardEntry();
                 if (Actor.HasTrait(TraitNames.Hydrophobic) || Actor.OccultManager.HasOccultType(Sims3.UI.Hud.OccultTypes.Frankenstein))
                 {
-                    Actor.PlayReaction(ReactionTypes.WhyMe, Target, Sims3.Gameplay.ThoughtBalloons.ThoughtBalloonAxis.kDislike, ReactionSpeed.ImmediateWithoutOverlay);
+                    Actor.PlayReaction(ReactionTypes.WhyMe, Target, ThoughtBalloonAxis.kDislike, ReactionSpeed.ImmediateWithoutOverlay);
                 }
                 if (GetSaunaOutfitEnabled(Actor.SimDescription))
                 {
@@ -248,7 +249,7 @@ namespace Destrospean
                 DoLoop(ExitReason.Default, LoopUpdate, mCurrentStateMachine);
                 if (Actor.HasTrait(TraitNames.Hydrophobic))
                 {
-                    Actor.PlayReaction(ReactionTypes.Cry, Target, Sims3.Gameplay.ThoughtBalloons.ThoughtBalloonAxis.kDislike, ReactionSpeed.AfterInteraction);
+                    Actor.PlayReaction(ReactionTypes.Cry, Target, ThoughtBalloonAxis.kDislike, ReactionSpeed.AfterInteraction);
                 }
                 Actor.UnregisterGroupTalk();
                 Actor.BuffManager.RemoveElement(BuffNames.Singed);
@@ -481,6 +482,57 @@ namespace Destrospean
                 }
             }
 
+            bool StateMachineEnterAndSit(MultiSeatObject multiSeatObject, StateMachineClient smc, SittingPosture sitPosture, Slot routingSlot, object sitContext)
+            {
+                if (sitPosture.Sim.SimDescription.IsVisuallyPregnant)
+                {
+                    ThoughtBalloonManager.BalloonData balloonData = null;
+                    balloonData = new ThoughtBalloonManager.BalloonData("balloon_moodlet_pregnant");
+                    if (balloonData != null)
+                    {
+                        sitPosture.Sim.ThoughtBalloonManager.ShowBalloon(balloonData);
+                    }
+                    return false;
+                }
+                if (sitPosture.Sim.CarryingChildPosture != null || sitPosture.Sim.CarryingPetPosture != null)
+                {
+                    return false;
+                }
+                if (!sitPosture.Sim.HasTrait(TraitNames.NeverNude))
+                {
+                    if (sitPosture.Sim.SimDescription.HasSpecialOutfit(kSaunaSpecialOutfitKey))
+                    {
+                        sitPosture.Sim.SwitchToOutfitWithSpin(OutfitCategories.Special, sitPosture.Sim.SimDescription.GetSpecialOutfitIndexFromKey(ResourceUtils.HashString32(kSaunaSpecialOutfitKey)));
+                    }
+                    else
+                    {
+                        sitPosture.Sim.SwitchToOutfitWithSpin(Sim.ClothesChangeReason.GoingToSwim);
+                    }
+                }
+                if (multiSeatObject.StateMachineEnterAndSit(smc, sitPosture, routingSlot, sitContext))
+                {
+                    sitPosture.Interactions.Remove(new InteractionObjectPair(StartSeatedCuddleA.Singleton, sitPosture.Sim));
+                    sitPosture.Sim.RemoveInteractionByType(StartSeatedCuddleA.Singleton);
+                    FieldInfo field = typeof(Posture).GetField("mSocialInteractionDefinitions", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (field != null)
+                    {
+                        List<InteractionDefinition> interactions = field.GetValue(sitPosture) as List<InteractionDefinition>;
+                        if (interactions != null)
+                        {
+                            interactions.Remove(StartSeatedCuddleA.Singleton);
+                        }
+                    }
+                    sitPosture.AddInteraction(SaunaClassic.CuddleSeatedWooHooSauna.Singleton, sitPosture.Sim);
+                    sitPosture.AddInteraction(SaunaClassic.CuddleSeatedWooHooSauna.TryForBoySingleton, sitPosture.Sim);
+                    sitPosture.AddInteraction(SaunaClassic.CuddleSeatedWooHooSauna.TryForGirlSingleton, sitPosture.Sim);
+                    sitPosture.AddInteraction(SaunaClassic.StartSaunaSeatedCuddleA.Singleton, sitPosture.Sim);
+                    sitPosture.AddSocialInteraction(SaunaClassic.StartSaunaSeatedCuddleA.Singleton);
+                    sitPosture.Sim.BuffManager.AddElementPaused((BuffNames)11132721365296021528, Origin.None);
+                    return true;
+                }
+                return false;
+            }
+
             public override void Cleanup()
             {
                 mCompleted = true;
@@ -554,7 +606,7 @@ namespace Destrospean
                     Actor.CarryStateMachine.RequestState(false, "x", "CarrySitting");
                 }
                 Assembly woohooerAssembly, woohooerSaunaAssembly;
-                if (TryGetWoohooerSaunaAssemblies(out woohooerAssembly, out woohooerSaunaAssembly) ? !StateMachineEnterAndSitEx(sittable as SaunaClassic, false, stateMachineClient, sittingPosture, routingSlot, sitContext) : !StateMachineEnterAndSit(sittable as SaunaClassic, stateMachineClient, sittingPosture, routingSlot, sitContext))
+                if (TryGetWoohooerSaunaAssemblies(out woohooerAssembly, out woohooerSaunaAssembly) ? !StateMachineEnterAndSitEx(sittable as SaunaClassic, false, stateMachineClient, sittingPosture, routingSlot, sitContext) : !StateMachineEnterAndSit(sittable as MultiSeatObject, stateMachineClient, sittingPosture, routingSlot, sitContext))
                 {
                     if (actorIsCarryingSomething)
                     {

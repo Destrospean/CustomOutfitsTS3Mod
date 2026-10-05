@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Destrospean;
 using Destrospean.CustomOutfits;
 using Sims3.Gameplay;
 using Sims3.Gameplay.Abstracts;
@@ -15,16 +16,15 @@ using Sims3.SimIFace;
 using Sims3.SimIFace.CAS;
 using Sims3.UI;
 using Sims3.UI.CAS;
-using Tuning = Sims3.Gameplay.Destrospean.CustomOutfits;
 
-namespace Destrospean
+namespace Sims3.Gameplay.Destrospean.Utils
 {
-    public class CustomOutfitsMasterController
+    public class NRaasMasterControllerIntegration
     {
         [Tunable]
-        protected static bool kInstantiator;
+        static bool kIntegrateNRaasMasterController = true;
 
-        static CustomOutfitsMasterController()
+        public static void Init()
         {
             LoadSaveManager.ObjectGroupsPreLoad += OnPreLoad;
         }
@@ -81,7 +81,7 @@ namespace Destrospean
 
                 public override bool Test(Sim actor, GameObject target, bool isAutonomous, ref GreyedOutTooltipCallback greyedOutTooltipCallback)
                 {
-                    return (actor == target && Tuning.kShowSimMenu || target as Sim == null && Tuning.kShowObjectMenu) && actor.SimDescription.Child && actor.SimDescription.IsHuman && !actor.SimDescription.IsRobot && !isAutonomous && AfterschoolActivity.HasAfterschoolActivityOfType(actor, mAfterschoolActivityType);
+                    return (actor == target && CustomOutfits.kShowSimMenu || target as Sim == null && CustomOutfits.kShowObjectMenu) && actor.SimDescription.Child && actor.SimDescription.IsHuman && !actor.SimDescription.IsRobot && !isAutonomous && AfterschoolActivity.HasAfterschoolActivityOfType(actor, mAfterschoolActivityType);
                 }
             }
 
@@ -139,7 +139,7 @@ namespace Destrospean
 
                 public override bool Test(Sim actor, GameObject target, bool isAutonomous, ref GreyedOutTooltipCallback greyedOutTooltipCallback)
                 {
-                    return (actor == target && Tuning.kShowSimMenu || target as Sim == null && Tuning.kShowObjectMenu) && actor.SimDescription.YoungAdultOrAbove && actor.SimDescription.IsHuman && !actor.SimDescription.IsRobot && !isAutonomous;
+                    return (actor == target && CustomOutfits.kShowSimMenu || target as Sim == null && CustomOutfits.kShowObjectMenu) && actor.SimDescription.YoungAdultOrAbove && actor.SimDescription.IsHuman && !actor.SimDescription.IsRobot && !isAutonomous;
                 }
             }
 
@@ -295,7 +295,7 @@ namespace Destrospean
 
                 public override bool Test(Sim actor, GameObject target, bool isAutonomous, ref GreyedOutTooltipCallback greyedOutTooltipCallback)
                 {
-                    return (actor == target && Tuning.kShowSimMenu || target as Sim == null && Tuning.kShowObjectMenu) && actor.SimDescription.YoungAdultOrAbove && actor.SimDescription.IsHuman && !actor.SimDescription.IsRobot && !isAutonomous;
+                    return (actor == target && CustomOutfits.kShowSimMenu || target as Sim == null && CustomOutfits.kShowObjectMenu) && actor.SimDescription.YoungAdultOrAbove && actor.SimDescription.IsHuman && !actor.SimDescription.IsRobot && !isAutonomous;
                 }
             }
 
@@ -503,7 +503,7 @@ namespace Destrospean
 
                 public override InteractionTestResult Test(ref InteractionInstanceParameters parameters, ref GreyedOutTooltipCallback greyedOutTooltipCallback)
                 {
-                    return InteractionDefinitionUtilities.FromBool((Tuning.kShowObjectMenu && SkatableTerrain.GetPondSkatingAreaAtPoint(parameters.Hit.mPoint) != null && mSkatingType == CustomSkatingOutfit.SkatingTypes.Ice && PondManager.ArePondsFrozen() || parameters.Target is ISkatableObject && mSkatingType == (((ISkatableObject)parameters.Target).IsIceRink ? CustomSkatingOutfit.SkatingTypes.Ice : CustomSkatingOutfit.SkatingTypes.Roller) || Tuning.kShowSimMenu && parameters.Actor == parameters.Target) && parameters.Actor.SimDescription.ChildOrAbove && parameters.Actor.SimDescription.IsHuman && !parameters.Actor.SimDescription.IsRobot && !parameters.Autonomous);
+                    return InteractionDefinitionUtilities.FromBool((CustomOutfits.kShowObjectMenu && SkatableTerrain.GetPondSkatingAreaAtPoint(parameters.Hit.mPoint) != null && mSkatingType == CustomSkatingOutfit.SkatingTypes.Ice && PondManager.ArePondsFrozen() || parameters.Target is ISkatableObject && mSkatingType == (((ISkatableObject)parameters.Target).IsIceRink ? CustomSkatingOutfit.SkatingTypes.Ice : CustomSkatingOutfit.SkatingTypes.Roller) || CustomOutfits.kShowSimMenu && parameters.Actor == parameters.Target) && parameters.Actor.SimDescription.ChildOrAbove && parameters.Actor.SimDescription.IsHuman && !parameters.Actor.SimDescription.IsRobot && !parameters.Autonomous);
                 }
             }
 
@@ -553,33 +553,37 @@ namespace Destrospean
 
         public static bool EditSpecialOutfit(Sim actor, string localizationKey, string specialOutfitKey)
         {
-            SimDescription simDescription = actor.SimDescription;
-            if (!simDescription.HasSpecialOutfit(specialOutfitKey))
+            if (kIntegrateNRaasMasterController)
             {
+                SimDescription simDescription = actor.SimDescription;
+                if (!simDescription.HasSpecialOutfit(specialOutfitKey))
+                {
+                    simDescription.AddSpecialOutfit(simDescription.GetOutfit(OutfitCategories.Everyday, 0), specialOutfitKey);
+                }
+                OutfitCategories previousOutfitCategory = actor.CurrentOutfitCategory;
+                int previousOutfitIndex = actor.CurrentOutfitIndex;
+                simDescription.AddOutfit(simDescription.GetSpecialOutfit(specialOutfitKey), OutfitCategories.Everyday, 0);
+                simDescription.RemoveSpecialOutfit(specialOutfitKey);
+                actor.SwitchToOutfitWithoutSpin(OutfitCategories.Everyday, 0);
+                CASLogic casLogic = CASLogic.GetSingleton();
+                new NRaas.MasterControllerSpace.Sims.Stylist().Perform(new NRaas.CommonSpace.Options.GameHitParameters<GameObject>(actor, actor, GameObjectHit.NoHit));
+                casLogic.ShowUI += Common.OnShowUI;
+                //Common.Notify(Common.Localize(actor.IsFemale, localizationKey + "Warning", actor.Name), simDescription, StyledNotification.NotificationStyle.kSystemMessage);
+                while (GameStates.NextInWorldStateId != 0)
+                {
+                    NRaas.SpeedTrap.Sleep();
+                }
+                casLogic.ShowUI -= Common.OnShowUI;
                 simDescription.AddSpecialOutfit(simDescription.GetOutfit(OutfitCategories.Everyday, 0), specialOutfitKey);
+                simDescription.RemoveOutfit(OutfitCategories.Everyday, 0, true);
+                actor.SwitchToOutfitWithoutSpin(previousOutfitCategory, previousOutfitIndex);
+                if (!CASChangeReporter.Instance.CasCancelled)
+                {
+                    Common.Notify(Common.Localize(actor.IsFemale, localizationKey + "Feedback", actor.Name), simDescription, StyledNotification.NotificationStyle.kSystemMessage);
+                }
+                return true;
             }
-            OutfitCategories previousOutfitCategory = actor.CurrentOutfitCategory;
-            int previousOutfitIndex = actor.CurrentOutfitIndex;
-            simDescription.AddOutfit(simDescription.GetSpecialOutfit(specialOutfitKey), OutfitCategories.Everyday, 0);
-            simDescription.RemoveSpecialOutfit(specialOutfitKey);
-            actor.SwitchToOutfitWithoutSpin(OutfitCategories.Everyday, 0);
-            CASLogic casLogic = CASLogic.GetSingleton();
-            new NRaas.MasterControllerSpace.Sims.Stylist().Perform(new NRaas.CommonSpace.Options.GameHitParameters<GameObject>(actor, actor, GameObjectHit.NoHit));
-            casLogic.ShowUI += Common.OnShowUI;
-            //Common.Notify(Common.Localize(actor.IsFemale, localizationKey + "Warning", actor.Name), simDescription, StyledNotification.NotificationStyle.kSystemMessage);
-            while (GameStates.NextInWorldStateId != 0)
-            {
-                NRaas.SpeedTrap.Sleep();
-            }
-            casLogic.ShowUI -= Common.OnShowUI;
-            simDescription.AddSpecialOutfit(simDescription.GetOutfit(OutfitCategories.Everyday, 0), specialOutfitKey);
-            simDescription.RemoveOutfit(OutfitCategories.Everyday, 0, true);
-            actor.SwitchToOutfitWithoutSpin(previousOutfitCategory, previousOutfitIndex);
-            if (!CASChangeReporter.Instance.CasCancelled)
-            {
-                Common.Notify(Common.Localize(actor.IsFemale, localizationKey + "Feedback", actor.Name), simDescription, StyledNotification.NotificationStyle.kSystemMessage);
-            }
-            return true;
+            return Common.EditSpecialOutfit(actor, localizationKey, specialOutfitKey);
         }
 
         public static bool EditSpecialOutfit(Sim actor, string localizationKey, string specialOutfitKey, string outfitName, uint group)

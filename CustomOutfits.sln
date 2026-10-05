@@ -3,18 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomOutfits", "CustomOutfits\CustomOutfits.csproj", "{D5E41DB2-3F43-4EEB-9CC7-303D24C203C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomOutfitsMasterController", "CustomOutfitsMasterController\CustomOutfitsMasterController.csproj", "{744E9A74-02F5-492E-B1F2-0CC734316407}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{744E9A74-02F5-492E-B1F2-0CC734316407}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{744E9A74-02F5-492E-B1F2-0CC734316407}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{744E9A74-02F5-492E-B1F2-0CC734316407}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{744E9A74-02F5-492E-B1F2-0CC734316407}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D5E41DB2-3F43-4EEB-9CC7-303D24C203C1}.Debug|Any CPU.ActiveCfg = Release|Any CPU
 		{D5E41DB2-3F43-4EEB-9CC7-303D24C203C1}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{D5E41DB2-3F43-4EEB-9CC7-303D24C203C1}.Release|Any CPU.ActiveCfg = Release|Any CPU

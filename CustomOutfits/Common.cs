@@ -87,9 +87,9 @@ namespace Destrospean.CustomOutfits
         public static bool EditSpecialOutfit(Sim actor, string localizationKey, string specialOutfitKey, string outfitName, uint group, SimOutfit outfitToApplyTo)
         {
             SimDescription simDescription = actor.SimDescription;
-            SimOutfit resultOutfit;
             if (!simDescription.HasSpecialOutfit(specialOutfitKey))
             {
+                SimOutfit resultOutfit;
                 if (OutfitUtils.TryApplyUniformToOutfit(outfitToApplyTo, new SimOutfit(ResourceKey.CreateOutfitKey(outfitName, group)), simDescription, "EditSpecialOutfit", out resultOutfit))
                 {
                     simDescription.AddSpecialOutfit(resultOutfit, specialOutfitKey);

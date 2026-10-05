@@ -64,6 +64,8 @@
     <Compile Include="CustomOutfits\CustomTeppanyakiChefOutfit.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CustomOutfits\CustomSaunaOutfit.cs" />
+    <Compile Include="Main.cs" />
+    <Compile Include="NRaasMasterControllerIntegration.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib">
@@ -104,6 +106,10 @@
     </Reference>
     <Reference Include="Sims3Metadata">
       <HintPath>..\libs\Sims3MetaData.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NRaasMasterController">
+      <HintPath>..\libs\NRaasMasterController.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
